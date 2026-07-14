@@ -1,8 +1,6 @@
 ﻿# SharpEye
 
-[![CI](https://github.com/SkoofyDoo/sharpeye/actions/workflows/ci.yml/badge.svg)](https://github.com/SkoofyDoo/sharpeye/actions/workflows/ci.yml)
-[![CodeQL](https://github.com/SkoofyDoo/sharpeye/actions/workflows/codeql.yml/badge.svg)](https://github.com/SkoofyDoo/sharpeye/actions/workflows/codeql.yml)
-[![Security](https://github.com/SkoofyDoo/sharpeye/actions/workflows/security.yml/badge.svg)](https://github.com/SkoofyDoo/sharpeye/actions/workflows/security.yml)
+[![Pipeline](https://github.com/SkoofyDoo/sharpeye/actions/workflows/pipeline.yml/badge.svg)](https://github.com/SkoofyDoo/sharpeye/actions/workflows/pipeline.yml)
 
 **An eagle-eyed image quality control library.**
 

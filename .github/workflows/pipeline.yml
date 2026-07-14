@@ -1,0 +1,198 @@
+name: Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: pipeline-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+  security-events: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,api,cli,demo]"
+          pip install build
+
+      - name: Ruff
+        run: ruff check src tests demo cli api
+
+      - name: Pytest
+        run: pytest -q
+
+      - name: Build wheel smoke
+        if: matrix.python-version == '3.11'
+        run: python -m build
+
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/dependency-review-action@v4
+
+  bandit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Bandit SAST
+        run: |
+          pip install "bandit[toml]>=1.7"
+          bandit -r src api cli -c pyproject.toml -ll
+
+  pip-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: pip-audit SCA (core + api + cli)
+        run: |
+          pip install --upgrade "setuptools>=83"
+          pip install -e ".[dev,api,cli]"
+          pip install pip-audit
+          pip-audit --desc on
+
+  pip-audit-all:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: pip-audit SCA (all extras incl. demo)
+        run: |
+          pip install -e ".[all]"
+          pip install pip-audit
+          pip-audit --desc on
+
+  trivy-fs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: CRITICAL,HIGH
+          exit-code: 1
+
+  trivy-image:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build API image
+        run: docker build -f api/Dockerfile -t sharpeye-api:ci .
+
+      - name: Trivy image scan
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: sharpeye-api:ci
+          severity: CRITICAL,HIGH
+          exit-code: 1
+
+  codeql:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: python
+          queries: security-and-quality
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: /language:python
+
+  summary:
+    needs:
+      - test
+      - bandit
+      - pip-audit
+      - pip-audit-all
+      - trivy-fs
+      - trivy-image
+      - codeql
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pipeline summary
+        run: |
+          status() {
+            case "$1" in
+              success) echo "OK" ;;
+              failure) echo "FAIL" ;;
+              cancelled) echo "SKIP" ;;
+              skipped) echo "SKIP" ;;
+              *) echo "$1" ;;
+            esac
+          }
+
+          echo "## Pipeline summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Job | Result |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|-----|--------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| test (3.11) | $(status '${{ needs.test.result }}') |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| bandit | $(status '${{ needs.bandit.result }}') |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| pip-audit | $(status '${{ needs.pip-audit.result }}') |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| pip-audit-all | $(status '${{ needs.pip-audit-all.result }}') (informational) |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| trivy-fs | $(status '${{ needs.trivy-fs.result }}') |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| trivy-image | $(status '${{ needs.trivy-image.result }}') (informational) |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| codeql | $(status '${{ needs.codeql.result }}') |" >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "${{ needs.test.result }}" != "success" ] \
+            || [ "${{ needs.bandit.result }}" != "success" ] \
+            || [ "${{ needs.pip-audit.result }}" != "success" ] \
+            || [ "${{ needs.trivy-fs.result }}" != "success" ] \
+            || [ "${{ needs.codeql.result }}" != "success" ]; then
+            echo "Pipeline FAILED — see job logs above."
+            exit 1
+          fi
+          echo "Pipeline PASSED."

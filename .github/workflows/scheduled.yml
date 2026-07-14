@@ -1,19 +1,16 @@
-name: DAST
+name: Scheduled
 
 on:
-  push:
-    branches: [main]
   schedule:
-    - cron: "0 3 * * 0"
+    - cron: "0 3 1-31/2 * *"
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  zap-baseline:
+  dast:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
@@ -39,3 +36,26 @@ jobs:
           target: "http://127.0.0.1:8000"
           rules_file_name: ".zap/rules.tsv"
           cmd_options: "-a"
+
+  sbom:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Generate CycloneDX SBOM
+        run: |
+          pip install -e ".[all]"
+          pip install cyclonedx-bom
+          cyclonedx-py environment -o sbom.cdx.json --output-format json
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-cyclonedx
+          path: sbom.cdx.json
+          retention-days: 90
