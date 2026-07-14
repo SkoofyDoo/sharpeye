@@ -1,0 +1,9 @@
+{
+  "description": "Synthetic benchmark labels for dataset_cleaner preset",
+  "preset": "dataset_cleaner",
+  "cases": [
+    {"id": "sharp", "expected": {"passed": true, "blur": false, "dark": false}},
+    {"id": "blur", "expected": {"passed": false, "blur": true, "dark": false}},
+    {"id": "dark", "expected": {"passed": false, "blur": true, "dark": true}}
+  ]
+}
