@@ -1,16 +1,21 @@
-"SharpEye Exceptions"
+"""SharpEye custom exceptions."""
+
 
 class SharpEyeError(Exception):
-    "Base exception for all errors"
+    """Base exception for all SharpEye errors."""
 
-class PresetNotFound(Exception):
-    "Raised when a preset YAML file does not exists."
 
-class PresetValidationException(Exception):
-    "Raised when preset YAML fails Pydantic validation."
+class PresetNotFoundError(SharpEyeError):
+    """Raised when a preset YAML file does not exist."""
 
-class InvalidImageError(Exception):
-    "Raised when input image cannot be read or decoded."
 
-class MetricError(Exception):
-    "Raised when a metric plugin fails during computation"
+class PresetValidationError(SharpEyeError):
+    """Raised when preset YAML fails Pydantic validation."""
+
+
+class InvalidImageError(SharpEyeError):
+    """Raised when input image cannot be read or decoded."""
+
+
+class MetricError(SharpEyeError):
+    """Raised when a metric plugin fails during computation."""
