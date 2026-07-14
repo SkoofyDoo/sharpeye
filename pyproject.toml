@@ -48,7 +48,7 @@ cli = [
 all = ["sharpeye[dev,api,demo,cli]"]
 
 [project.scripts]
-sharpeye = "sharpeye_cli:app"
+sharpeye = "cli.sharpeye_cli:run_app"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/sharpeye"]

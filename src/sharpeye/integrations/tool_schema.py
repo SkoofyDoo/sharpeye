@@ -1,9 +1,11 @@
 ﻿"""JSON Schema for LLM tool calling - describes SharpEye REST API"""
 
 from __future__ import annotations
+
 from typing import Any
 
 from sharpeye.config import list_presets
+
 
 def build_tool_schema() -> dict[str, Any]:
     presets = list_presets()

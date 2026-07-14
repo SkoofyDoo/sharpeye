@@ -29,6 +29,7 @@ def test_registry_lists_builtins():
         "brightness_mean",
         "contrast_std",
         "edge_laplacian_p90",
+        "hf_energy_ratio",
         "laplacian_variance",
         "noise_std",
         "tenengrad",
@@ -131,3 +132,12 @@ def test_edge_laplacian_p90_uses_roi_from_ctx():
     ctx: dict = {"roi_gray": roi}
     compute_metrics(gray, ["edge_laplacian_p90"], ctx)
     assert ctx["canny_edges"].shape == roi.shape
+
+
+def test_hf_energy_ratio_sharp_greater_than_flat():
+    sharp = _sharp_image()
+    flat = np.full((200, 200), 128, dtype = np.uint8)
+    sharp_val = compute_metrics(sharp, ["hf_energy_ratio"], {})["hf_energy_ratio"]
+    flat_val = compute_metrics(flat, ["hf_energy_ratio"], {})["hf_energy_ratio"]
+    assert sharp_val > flat_val
+    assert 0.0 < sharp_val <= 1.0

@@ -35,6 +35,16 @@ def test_list_presets():
     names = list_presets(presets_dir=PRESETS_DIR)
     assert "default" in names
     assert "telemedicine" in names
+    assert "dataset_cleaner" in names
+
+
+def test_load_dataset_cleaner_preset():
+    preset = load_preset("dataset_cleaner", presets_dir = PRESETS_DIR)
+    assert preset.name == "dataset_cleaner"
+    assert "hf_energy_ratio" in preset.enabled_metrics
+    total = sum(preset.scoring.weights.values())
+    assert abs(total - 1.0) < 0.01
+    assert "contrast_std" in preset.scoring.weights
 
 
 def test_load_telemedicine_preset():

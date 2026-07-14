@@ -8,6 +8,7 @@ from sharpeye.exceptions import MetricError
 from sharpeye.metrics.base import Metric
 from sharpeye.metrics.edges import EdgeLaplacianP90
 from sharpeye.metrics.exposure import BrightnessMean, ContrastStd
+from sharpeye.metrics.frequency import HfEnergyRatio
 from sharpeye.metrics.noise import NoiseStd
 from sharpeye.metrics.sharpness import LaplacianVariance, Tenengrad
 
@@ -49,6 +50,7 @@ def _register_builtins() -> None:
         ContrastStd(),
         NoiseStd(),
         EdgeLaplacianP90(),
+        HfEnergyRatio(),
     ):
         register_metric(metric)
 

@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-_HIGHER_IS_BETTER = frozenset({"laplacian_variance", "tenengrad", "contrast_std"})
+_HIGHER_IS_BETTER = frozenset({
+    "laplacian_variance", "tenengrad", "contrast_std", "hf_energy_ratio",
+})
 _LOWER_IS_BETTER = frozenset({"noise_std"})
 
 

@@ -1,0 +1,48 @@
+name: dataset_cleaner
+description: ML dataset QC - reject blur, compression artifacts, exposure outliers
+
+preprocess:
+    max_width: 640
+    roi_ratio: 0.65
+
+metrics:
+    noise_kernel_size: 7
+
+enabled_metrics:
+    - laplacian_variance
+    - brightness_mean
+    - contrast_std
+    - tenengrad
+    - noise_std
+    - hf_energy_ratio
+
+gates:
+    rules:
+        - metric: brightness_mean
+          min: 25
+          max: 240
+          severity: catastrophic
+          message: 'Exposure out of acceptable range.'
+          suggestion: 'Re-capture or adjust brightness before adding to dataset'
+
+        - metric: laplacian_variance
+          min: 40
+          severity: catastrophic
+          message: 'Frame is too blurry for training.'
+          suggestion: 'Remove from dataset or re-shoot with focus locked'
+
+        - metric: hf_energy_ratio
+          min: 0.55
+          severity: soft
+          message: 'Heavy compression or missing high-frequency detail.'
+          suggestion: 'Prefer PNG/WebP source; avoid re-saving JPEG multiple times'
+
+scoring:
+    weights:
+        laplacian_variance: 0.30
+        tenengrad: 0.25
+        contrast_std: 0.15
+        noise_std: 0.15
+        hf_energy_ratio: 0.15
+    good_percentile: 0.67
+    medium_percentile: 0.33
