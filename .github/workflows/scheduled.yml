@@ -1,61 +1,61 @@
 name: Scheduled
 
 on:
-  schedule:
-    - cron: "0 3 1-31/2 * *"
-  workflow_dispatch:
+    schedule:
+        - cron: '0 3 1-31/2 * *'
+    workflow_dispatch:
 
 permissions:
-  contents: read
+    contents: read
 
 jobs:
-  dast:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+    dast:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                  python-version: '3.11'
 
-      - name: Install API dependencies
-        run: pip install -e ".[api]"
+            - name: Install API dependencies
+              run: pip install -e ".[api]"
 
-      - name: Start API server
-        run: |
-          uvicorn api.main:app --host 127.0.0.1 --port 8000 &
-          for i in $(seq 1 30); do
-            curl -sf http://127.0.0.1:8000/health && break
-            sleep 2
-          done
+            - name: Start API server
+              run: |
+                  uvicorn api.main:app --host 127.0.0.1 --port 8000 &
+                  for i in $(seq 1 30); do
+                    curl -sf http://127.0.0.1:8000/health && break
+                    sleep 2
+                  done
 
-      - name: OWASP ZAP baseline scan
-        uses: zaproxy/action-baseline@v0.12.0
-        with:
-          target: "http://127.0.0.1:8000"
-          rules_file_name: ".zap/rules.tsv"
-          cmd_options: "-a"
+            - name: OWASP ZAP baseline scan
+              uses: zaproxy/action-baseline@v0.12.0
+              with:
+                  target: 'http://127.0.0.1:8000'
+                  rules_file_name: '.zap/rules.tsv'
+                  cmd_options: '-a'
 
-  sbom:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+    sbom:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                  python-version: '3.11'
 
-      - name: Generate CycloneDX SBOM
-        run: |
-          pip install -e ".[all]"
-          pip install cyclonedx-bom
-          cyclonedx-py environment -o sbom.cdx.json --output-format json
+            - name: Generate CycloneDX SBOM
+              run: |
+                  pip install -e ".[all]"
+                  pip install cyclonedx-bom
+                  cyclonedx-py environment -o sbom.cdx.json --output-format json
 
-      - name: Upload SBOM artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: sbom-cyclonedx
-          path: sbom.cdx.json
-          retention-days: 90
+            - name: Upload SBOM artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: sbom-cyclonedx
+                  path: sbom.cdx.json
+                  retention-days: 90
