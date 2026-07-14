@@ -1,5 +1,9 @@
 ﻿# SharpEye
 
+[![CI](https://github.com/SkoofyDoo/sharpeye/actions/workflows/ci.yml/badge.svg)](https://github.com/SkoofyDoo/sharpeye/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/SkoofyDoo/sharpeye/actions/workflows/codeql.yml/badge.svg)](https://github.com/SkoofyDoo/sharpeye/actions/workflows/codeql.yml)
+[![Security](https://github.com/SkoofyDoo/sharpeye/actions/workflows/security.yml/badge.svg)](https://github.com/SkoofyDoo/sharpeye/actions/workflows/security.yml)
+
 **An eagle-eyed image quality control library.**
 
 SharpEye evaluates image quality and returns human-readable verdicts with actionable suggestions — not just scores. YAML presets let you tune gates per use case: ML dataset cleaning, telemedicine photos, or general QC.

@@ -10,7 +10,9 @@ venv/
 .ruff_cache/
 .mypy_cache/
 *.log
+report.csv
+sbom.cdx.json
+demo/xmen_wolverine/
 
-
-IP_POLICY.md 
+IP_POLICY.md
 MASTER_PLAN.md
