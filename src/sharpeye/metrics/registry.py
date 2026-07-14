@@ -6,8 +6,10 @@ import numpy as np
 
 from sharpeye.exceptions import MetricError
 from sharpeye.metrics.base import Metric
+from sharpeye.metrics.edges import EdgeLaplacianP90
 from sharpeye.metrics.exposure import BrightnessMean, ContrastStd
-from sharpeye.metrics.sharpness import LaplacianVariance
+from sharpeye.metrics.noise import NoiseStd
+from sharpeye.metrics.sharpness import LaplacianVariance, Tenengrad
 
 _REGISTRY: dict[str, Metric] = {}
 
@@ -40,7 +42,14 @@ def compute_metrics(
 
 
 def _register_builtins() -> None:
-    for metric in (LaplacianVariance(), BrightnessMean(), ContrastStd()):
+    for metric in (
+        LaplacianVariance(),
+        Tenengrad(),
+        BrightnessMean(),
+        ContrastStd(),
+        NoiseStd(),
+        EdgeLaplacianP90(),
+    ):
         register_metric(metric)
 
 

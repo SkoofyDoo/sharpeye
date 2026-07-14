@@ -25,7 +25,7 @@ class Pipeline:
         name: str,
         presets_dir: Path | None = None,
     ) -> Pipeline:
-        return cls(load_preset(name, presets_dir=presets_dir))
+        return cls(load_preset(name, presets_dir = presets_dir))
 
     def _resolve_metrics(self) -> list[str]:
         available = set(list_metrics())
@@ -47,12 +47,12 @@ class Pipeline:
         human_summary = build_human_summary(issues, label)
 
         return FrameReport(
-            passed=passed,
-            label=label,
-            metrics=metrics,
-            issues=issues,
-            human_summary=human_summary,
-            preset=self.preset.name,
+            passed = passed,
+            label = label,
+            metrics = metrics,
+            issues = issues,
+            human_summary = human_summary,
+            preset = self.preset.name,
         )
 
 

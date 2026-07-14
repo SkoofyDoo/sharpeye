@@ -73,7 +73,40 @@ def test_frame_report_serializable(pipe):
     assert d["preset"] == "default"
 
 
-def test_resolve_metrics_skips_unregistered(pipe):
+def test_default_preset_computes_all_six_metrics(pipe):
     report = pipe.evaluate_frame(_sharp_image())
-    assert "tenengrad" not in report.metrics
-    assert "noise_std" not in report.metrics
+    expected = {
+        "laplacian_variance",
+        "brightness_mean",
+        "contrast_std",
+        "tenengrad",
+        "noise_std",
+        "edge_laplacian_p90",
+    }
+    assert set(report.metrics.keys()) == expected
+
+
+def test_telemedicine_preset_loads_and_evaluates():
+    pipe = Pipeline.from_preset("telemedicine", presets_dir=PRESETS_DIR)
+    report = pipe.evaluate_frame(_dark_image())
+    assert report.preset == "telemedicine"
+    assert report.passed is False
+    assert "window" in report.human_summary.lower()
+
+
+def _low_contrast_sharp_image(size: int = 200) -> np.ndarray:
+    img = np.full((size, size), 127, dtype=np.uint8)
+    for i in range(0, size, 4):
+        cv2.line(img, (i, 0), (i, size), 133, 1)
+    return img
+
+
+def test_telemedicine_soft_contrast_issue():
+    pipe = Pipeline.from_preset("telemedicine", presets_dir=PRESETS_DIR)
+    report = pipe.evaluate_frame(_low_contrast_sharp_image())
+    contrast_issues = [i for i in report.issues if i.metric == "contrast_std"]
+    assert contrast_issues
+    assert contrast_issues[0].severity == "soft"
+    assert report.passed is True
+    assert report.label == "medium"
+    assert "contrast" in report.human_summary.lower()

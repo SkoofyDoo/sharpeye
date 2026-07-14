@@ -2,36 +2,40 @@ name: default
 description: General-purpose image quality preset
 
 preprocess:
-  max_width: 640
-  roi_ratio: 0.65
+    max_width: 640
+    roi_ratio: 0.65
+
+metrics:
+    noise_kernel_size: 7
 
 enabled_metrics:
-  - laplacian_variance
-  - brightness_mean
-  - contrast_std
-  - tenengrad
-  - noise_std
+    - laplacian_variance
+    - brightness_mean
+    - contrast_std
+    - tenengrad
+    - noise_std
+    - edge_laplacian_p90
 
 gates:
-  rules:
-    - metric: brightness_mean
-      min: 20
-      max: 245
-      severity: catastrophic
-      message: "Image is too dark or too bright."
-      suggestion: "Move closer to a window or turn on more light."
+    rules:
+        - metric: brightness_mean
+          min: 20
+          max: 245
+          severity: catastrophic
+          message: 'Image is too dark or too bright.'
+          suggestion: 'Move closer to a window or turn on more light.'
 
-    - metric: laplacian_variance
-      min: 30
-      severity: catastrophic
-      message: "Image appears blurry."
-      suggestion: "Hold the camera steady and tap to focus."
+        - metric: laplacian_variance
+          min: 30
+          severity: catastrophic
+          message: 'Image appears blurry.'
+          suggestion: 'Hold the camera steady and tap to focus.'
 
 scoring:
-  weights:
-    laplacian_variance: 0.40
-    tenengrad: 0.30
-    contrast_std: 0.15
-    noise_std: 0.15
-  good_percentile: 0.67
-  medium_percentile: 0.33
+    weights:
+        laplacian_variance: 0.40
+        tenengrad: 0.30
+        contrast_std: 0.15
+        noise_std: 0.15
+    good_percentile: 0.67
+    medium_percentile: 0.33

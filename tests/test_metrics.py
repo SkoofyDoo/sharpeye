@@ -25,9 +25,14 @@ def _dark_image(size: int = 200) -> np.ndarray:
 
 def test_registry_lists_builtins():
     names = list_metrics()
-    assert "laplacian_variance" in names
-    assert "brightness_mean" in names
-    assert "contrast_std" in names
+    assert names == [
+        "brightness_mean",
+        "contrast_std",
+        "edge_laplacian_p90",
+        "laplacian_variance",
+        "noise_std",
+        "tenengrad",
+    ]
 
 
 def test_unknown_metric_raises():
@@ -79,3 +84,50 @@ def test_compute_multiple_metrics():
     )
     assert len(result) == 3
     assert all(isinstance(v, float) for v in result.values())
+
+
+def _noisy_image(size: int = 200) -> np.ndarray:
+    rng = np.random.default_rng(42)
+    base = _sharp_image(size).astype(np.int16)
+    noise = rng.integers(-25, 25, size=(size, size), dtype=np.int16)
+    return np.clip(base + noise, 0, 255).astype(np.uint8)
+
+
+def test_tenengrad_sharp_greater_than_blur():
+    sharp = _sharp_image()
+    blur = _blur_image()
+    sharp_val = compute_metrics(sharp, ["tenengrad"], {})["tenengrad"]
+    blur_val = compute_metrics(blur, ["tenengrad"], {})["tenengrad"]
+    assert sharp_val > blur_val
+
+
+def test_noise_std_noisy_greater_than_flat():
+    noisy = _noisy_image()
+    flat = np.full((200, 200), 128, dtype=np.uint8)
+    noisy_val = compute_metrics(noisy, ["noise_std"], {})["noise_std"]
+    flat_val = compute_metrics(flat, ["noise_std"], {})["noise_std"]
+    assert noisy_val > flat_val
+
+
+def test_noise_std_kernel_size_affects_result():
+    gray = _noisy_image()
+    small_k = compute_metrics(gray, ["noise_std"], {"noise_kernel_size": 3})["noise_std"]
+    large_k = compute_metrics(gray, ["noise_std"], {"noise_kernel_size": 15})["noise_std"]
+    assert small_k != large_k
+    assert small_k > 0 and large_k > 0
+
+
+def test_edge_laplacian_p90_on_sharp_image():
+    gray = _sharp_image()
+    ctx: dict = {"roi_gray": gray}
+    value = compute_metrics(gray, ["edge_laplacian_p90"], ctx)["edge_laplacian_p90"]
+    assert value > 0
+    assert "canny_edges" in ctx
+
+
+def test_edge_laplacian_p90_uses_roi_from_ctx():
+    gray = _sharp_image()
+    roi = gray[50:150, 50:150]
+    ctx: dict = {"roi_gray": roi}
+    compute_metrics(gray, ["edge_laplacian_p90"], ctx)
+    assert ctx["canny_edges"].shape == roi.shape

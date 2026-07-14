@@ -9,8 +9,7 @@ from sharpeye.metrics.base import Metric
 
 
 class LaplacianVariance(Metric):
-    """ Sum of squared Sobel gradient magnitudes - blur-sensitive sharpness """
-    name = "Laplacian_Variance"
+    name = "laplacian_variance"
 
     def compute(self, gray: np.ndarray, ctx: dict) -> float:
         lap = ctx.get("laplacian")
@@ -19,9 +18,12 @@ class LaplacianVariance(Metric):
             ctx["laplacian"] = lap
         return float(lap.var())
 
+
 class Tenengrad(Metric):
-    name = "Tenengrad"
-    
+    """Sum of squared Sobel gradient magnitudes — blur-sensitive sharpness."""
+
+    name = "tenengrad"
+
     def compute(self, gray: np.ndarray, ctx: dict) -> float:
         gx = ctx.get("sobel_x")
         gy = ctx.get("sobel_y")
@@ -32,4 +34,3 @@ class Tenengrad(Metric):
             ctx["sobel_y"] = gy
         magnitude_sq = gx * gx + gy * gy
         return float(np.mean(magnitude_sq))
-

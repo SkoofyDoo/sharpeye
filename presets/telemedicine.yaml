@@ -1,0 +1,55 @@
+name: telemedicine
+description: Patient photo QC for telemedicine - readable verdicts for non-technical users
+
+preprocess:
+    max_width: 640
+    roi_ratio: 0.65
+
+metrics:
+    noise_kernel_size: 7
+
+enabled_metrics:
+    - laplacian_variance
+    - brightness_mean
+    - contrast_std
+    - tenengrad
+    - noise_std
+
+gates:
+    rules:
+        - metric: brightness_mean
+          min: 40
+          max: 220
+          severity: catastrophic
+          message: 'Photo is too dark or overexposed'
+          suggestion: 'Move closer to a window or turn on more light. Avoid pointing the camera at bright lamps'
+
+        - metric: laplacian_variance
+          min: 50
+          severity: catastrophic
+          message: 'Photo looks blurry.'
+          suggestion: 'Hold the phone steady with both hands and tap the screen to focus on the affected area.'
+
+        - metric: contrast_std
+          min: 12
+          severity: soft
+          message: 'Low contrast - details may be hard to see.'
+          suggestion: 'Improve lighting and avoid plain white or very dark backgrounds.'
+
+    groups:
+        - mode: any_of
+          rules:
+              - metric: tenengrad
+                min: 500
+                severity: soft
+                message: 'Edges are weak - image may be slightly out of focus.'
+                suggestion: 'Move closer and refocus before taking the photo.'
+
+scoring:
+    weights:
+        laplacian_variance: 0.35
+        tenengrad: 0.35
+        contrast_std: 0.15
+        noise_std: 0.15
+    good_percentile: 0.67
+    medium_percentile: 0.33

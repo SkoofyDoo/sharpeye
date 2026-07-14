@@ -34,6 +34,18 @@ def test_preset_not_found():
 def test_list_presets():
     names = list_presets(presets_dir=PRESETS_DIR)
     assert "default" in names
+    assert "telemedicine" in names
+
+
+def test_load_telemedicine_preset():
+    preset = load_preset("telemedicine", presets_dir=PRESETS_DIR)
+    assert preset.name == "telemedicine"
+    assert preset.metrics.noise_kernel_size == 7
+    assert "tenengrad" in preset.enabled_metrics
+    assert len(preset.gates.rules) == 3
+    assert len(preset.gates.groups) == 1
+    total = sum(preset.scoring.weights.values())
+    assert abs(total - 1.0) < 0.01
 
 
 def test_frame_report_to_dict_no_numpy():
