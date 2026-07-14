@@ -70,6 +70,7 @@ def test_frame_report_to_dict_no_numpy():
     json.dumps(d)  # must not raise
     assert d["passed"] is False
     assert d["metrics"]["laplacian_variance"] == 12.3456
+    assert d["composite_score"] is None
 
 
 def test_build_human_summary_with_issues():

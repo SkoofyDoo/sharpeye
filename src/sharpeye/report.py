@@ -34,6 +34,7 @@ class FrameReport:
     issues: list[Issue] = field(default_factory=list)
     human_summary: str = ""
     preset: str = ""
+    composite_score: float | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -43,6 +44,9 @@ class FrameReport:
             "issues": [i.to_dict() for i in self.issues],
             "human_summary": self.human_summary,
             "preset": self.preset,
+            "composite_score": (
+                round(self.composite_score, 4) if self.composite_score is not None else None
+            ),
         }
 
 

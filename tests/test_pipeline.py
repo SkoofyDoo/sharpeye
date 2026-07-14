@@ -71,6 +71,7 @@ def test_frame_report_serializable(pipe):
     assert isinstance(d["metrics"], dict)
     assert isinstance(d["issues"], list)
     assert d["preset"] == "default"
+    assert d["composite_score"] is None
 
 
 def test_default_preset_computes_all_six_metrics(pipe):
@@ -99,6 +100,44 @@ def _low_contrast_sharp_image(size: int = 200) -> np.ndarray:
     for i in range(0, size, 4):
         cv2.line(img, (i, 0), (i, size), 133, 1)
     return img
+
+
+def test_evaluate_batch_returns_batch_report(pipe):
+    batch = pipe.evaluate_batch([_sharp_image(), _blur_image(), _dark_image()])
+    assert batch.total == 3
+    assert batch.passed_count + batch.failed_count == 3
+    assert batch.preset == "default"
+    assert len(batch.frames) == 3
+
+
+def test_evaluate_batch_catastrophic_stays_bad(pipe):
+    batch = pipe.evaluate_batch([_sharp_image(), _dark_image()])
+    dark_frame = batch.frames[1]
+    assert dark_frame.label == "bad"
+    assert dark_frame.passed is False
+    assert dark_frame.composite_score is None
+
+
+def test_evaluate_batch_sharp_gets_composite_score(pipe):
+    batch = pipe.evaluate_batch([_sharp_image(), _blur_image()])
+    sharp_frame = batch.frames[0]
+    assert sharp_frame.composite_score is not None
+    assert sharp_frame.composite_score > 0
+
+
+def test_evaluate_batch_single_image_no_scoring(pipe):
+    batch = pipe.evaluate_batch([_sharp_image()])
+    assert batch.total == 1
+    assert batch.frames[0].composite_score is None
+
+
+def test_batch_report_serializable(pipe):
+    batch = pipe.evaluate_batch([_sharp_image(), _dark_image()])
+    d = batch.to_dict()
+    assert d["total"] == 2
+    assert len(d["frames"]) == 2
+    json_safe = __import__("json").dumps(d)
+    assert json_safe
 
 
 def test_telemedicine_soft_contrast_issue():
