@@ -25,6 +25,16 @@ def load_image(source: str | Path | np.ndarray) -> np.ndarray:
         raise InvalidImageError(f"Cannot read image: {path}")
     return img
 
+def load_image_from_bytes(data: bytes) -> np.ndarray:
+    """Decode uploaded image bytes(multipart) to BGR ndarray"""
+    
+    if not data:
+        raise InvalidImageError("Empty image upload.")
+    arr = np.frombuffer(data, dtype = np.uint8)
+    img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+    if img is None:
+        raise InvalidImageError("Cannot decode image bytes.")
+    return img
 
 def _resize_max_width(img: np.ndarray, max_width: int) -> np.ndarray:
     """ Resizing of Image to get better performance """
