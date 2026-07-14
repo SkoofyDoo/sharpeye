@@ -32,3 +32,4 @@ class Tenengrad(Metric):
             ctx["sobel_y"] = gy
         magnitude_sq = gx * gx + gy * gy
         return float(np.mean(magnitude_sq))
+
