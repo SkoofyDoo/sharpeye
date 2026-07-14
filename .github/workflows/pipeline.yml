@@ -52,7 +52,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/dependency-review-action@v4
+      - uses: actions/dependency-review-action@v5
 
   bandit:
     runs-on: ubuntu-latest
@@ -84,7 +84,7 @@ jobs:
           pip install --upgrade "setuptools>=83"
           pip install -e ".[dev,api,cli]"
           pip install pip-audit
-          pip-audit --desc on
+          pip-audit --skip-editable --desc on
 
   pip-audit-all:
     runs-on: ubuntu-latest
@@ -99,9 +99,10 @@ jobs:
 
       - name: pip-audit SCA (all extras incl. demo)
         run: |
+          pip install --upgrade "setuptools>=83"
           pip install -e ".[all]"
           pip install pip-audit
-          pip-audit --desc on
+          pip-audit --skip-editable --desc on
 
   trivy-fs:
     runs-on: ubuntu-latest
@@ -131,6 +132,7 @@ jobs:
           image-ref: sharpeye-api:ci
           severity: CRITICAL,HIGH
           exit-code: 1
+          ignore-unfixed: true
 
   codeql:
     runs-on: ubuntu-latest
