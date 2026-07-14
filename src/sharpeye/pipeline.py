@@ -33,6 +33,7 @@ class Pipeline:
 
     def evaluate_frame(self, image: str | Path | np.ndarray) -> FrameReport:
         gray, ctx = preprocess_frame(image, self.preset.preprocess)
+        ctx["noise_kernel_size"] = self.preset.metrics.noise_kernel_size
 
         metrics = compute_metrics(gray, self._resolve_metrics(), ctx)
 

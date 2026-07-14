@@ -18,6 +18,8 @@ class PreprocessConfig(BaseModel):
     max_width: int = 640
     roi_ratio: float = Field(default=0.65, ge=0.1, le=1.0)
 
+class MetricsConfig(BaseModel):
+    noise_kernel_size: int = Field(default = 7, ge = 3, le = 31)
 
 class GateRule(BaseModel):
     metric: str
@@ -60,6 +62,7 @@ class Preset(BaseModel):
     gates: GatesConfig = Field(default_factory=GatesConfig)
     scoring: ScoringConfig = Field(default_factory=ScoringConfig)
     enabled_metrics: list[str] = Field(default_factory=list)
+    metrics: MetricsConfig = Field(default_factory = MetricsConfig)
 
 
 def _presets_dir() -> Path:
