@@ -1,10 +1,10 @@
-"""REST API v1 Routes"""
+﻿"""REST API v1 Routes"""
 
 from __future__ import annotations
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
-from sharpeye.config import list_presets, load_preset
+from sharpeye.config import list_presets
 from sharpeye.exceptions import InvalidImageError, PresetNotFoundError, SharpEyeError
 from sharpeye.integrations.tool_schema import build_tool_schema
 from sharpeye.pipeline import Pipeline

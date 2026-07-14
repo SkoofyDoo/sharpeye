@@ -1,4 +1,4 @@
-"""JSON Schema for LLM tool calling - describes SharpEye REST API"""
+﻿"""JSON Schema for LLM tool calling - describes SharpEye REST API"""
 
 from __future__ import annotations
 from typing import Any
@@ -46,7 +46,7 @@ def build_tool_schema() -> dict[str, Any]:
             "endpoints": {
                 "check": {"method": "POST", "path": "/v1/check"},
                 "batch": {"method": "POST", "path": "/v1/batch"},
-                "presets": {"method": "GET", "path": "/v1/cpresets"},
+                "presets": {"method": "GET", "path": "/v1/presets"},
             },
         },
     }
