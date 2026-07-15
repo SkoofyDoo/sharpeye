@@ -92,3 +92,56 @@ def list_presets(presets_dir: Path | None = None) -> list[str]:
     if not directory.exists():
         return []
     return sorted(p.stem for p in directory.glob("*.yaml"))
+
+
+USE_CASE_PRESETS: dict[str, str] = {
+    "ml_dataset": "dataset_cleaner",
+    "dataset_qc": "dataset_cleaner",
+    "telemedicine": "telemedicine",
+    "patient_photo": "telemedicine",
+    "general": "default",
+}
+
+
+def list_presets_catalog(presets_dir: Path | None = None) -> list[dict[str, object]]:
+    directory = presets_dir or _presets_dir()
+    catalog: list[dict[str, object]] = []
+    for name in list_presets(directory):
+        preset = load_preset(name, directory)
+        use_cases = sorted(k for k, v in USE_CASE_PRESETS.items() if v == name)
+        catalog.append(
+            {
+                "name": name,
+                "description": preset.description,
+                "use_cases": use_cases,
+                "enabled_metrics": preset.enabled_metrics,
+            }
+        )
+    return catalog
+
+
+def resolve_preset(
+    *,
+    preset: str | None = None,
+    use_case: str | None = None,
+    presets_dir: Path | None = None,
+) -> str:
+    directory = presets_dir or _presets_dir()
+    available = list_presets(directory)
+
+    if preset:
+        if preset not in available:
+            raise PresetNotFoundError(f"Preset not found: {preset}")
+        return preset
+
+    if use_case:
+        key = use_case.strip().lower()
+        mapped = USE_CASE_PRESETS.get(key)
+        if mapped is None:
+            known = ", ".join(sorted(USE_CASE_PRESETS))
+            raise PresetNotFoundError(
+                f"Unknown use_case '{use_case}'. Known values: {known}"
+            )
+        return mapped
+
+    return "default"

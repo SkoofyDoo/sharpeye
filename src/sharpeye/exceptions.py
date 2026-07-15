@@ -19,3 +19,6 @@ class InvalidImageError(SharpEyeError):
 
 class MetricError(SharpEyeError):
     """Raised when a metric plugin fails during computation."""
+
+class ArchiveError(SharpEyeError):
+    """Raised when an archive cannot be read, is unsafe, or has no images."""

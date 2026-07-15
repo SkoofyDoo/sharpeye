@@ -11,7 +11,8 @@ import numpy as np
 import pytest
 from typer.testing import CliRunner
 
-from cli.sharpeye_cli import _collect_images, app
+from cli.sharpeye_cli import app
+from sharpeye.ingest import collect_images
 
 runner = CliRunner()
 
@@ -38,13 +39,13 @@ def fixture_images(tmp_path: Path) -> Path:
 
 
 def test_collect_images_folder(fixture_images: Path):
-    paths = _collect_images(fixture_images)
-    assert len(paths) == 2
+    with collect_images(fixture_images) as paths:
+        assert len(paths) == 2
 
 
 def test_collect_images_single_file(fixture_images: Path):
-    paths = _collect_images(fixture_images / "sharp.png")
-    assert len(paths) == 1
+    with collect_images(fixture_images / "sharp.png") as paths:
+        assert len(paths) == 1
 
 
 def test_clean_csv_report(fixture_images: Path, tmp_path: Path):

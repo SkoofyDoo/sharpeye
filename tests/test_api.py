@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import base64
 import io
+import zipfile
+from pathlib import Path
 
 import cv2
 import numpy as np
@@ -46,6 +49,23 @@ def test_get_tool_schema():
     r = client.get("/v1/schema/tool")
     assert r.status_code == 200
     assert r.json()["name"] == "sharpeye_check_image"
+
+
+def test_get_tools_schema():
+    r = client.get("/v1/schema/tools")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["count"] == 3
+    names = {t["name"] for t in body["tools"]}
+    assert "sharpeye_check_archive" in names
+
+
+def test_get_presets_includes_catalog():
+    r = client.get("/v1/presets")
+    assert r.status_code == 200
+    body = r.json()
+    assert "catalog" in body
+    assert body["catalog"][0]["description"]
 
 
 def test_check_sharp_image():
@@ -111,3 +131,50 @@ def test_batch_two_images():
 def test_batch_empty_rejected():
     r = client.post("/v1/batch", data = {"preset": "default"})
     assert r.status_code == 422
+
+
+def test_check_b64_sharp_image():
+    payload = {
+        "image_base64": base64.b64encode(_sharp_png()).decode("ascii"),
+        "preset": "default",
+    }
+    r = client.post("/v1/check/b64", json=payload)
+    assert r.status_code == 200
+    assert r.json()["passed"] is True
+
+
+def test_check_b64_use_case_resolves_preset():
+    payload = {
+        "image_base64": base64.b64encode(_sharp_png()).decode("ascii"),
+        "use_case": "ml_dataset",
+    }
+    r = client.post("/v1/check/b64", json=payload)
+    assert r.status_code == 200
+    assert r.json()["preset"] == "dataset_cleaner"
+
+
+def _make_zip_bytes(entries: dict[str, bytes]) -> bytes:
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        for name, data in entries.items():
+            zf.writestr(name, data)
+    return buf.getvalue()
+
+
+def test_batch_archive_b64(tmp_path: Path):
+    zbytes = _make_zip_bytes({
+        "one.png": _png_bytes(),
+        "two.png": _sharp_png(),
+    })
+    r = client.post(
+        "/v1/batch/archive/b64",
+        json={
+            "archive_base64": base64.b64encode(zbytes).decode("ascii"),
+            "use_case": "dataset_qc",
+        },
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert body["total"] == 2
+    assert len(body["items"]) == 2
+    assert body["preset"] == "dataset_cleaner"

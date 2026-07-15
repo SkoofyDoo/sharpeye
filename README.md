@@ -59,7 +59,31 @@ pip install -e ".[demo]"
 python demo/app.py
 ```
 
-Upload any image. Default preset is `dataset_cleaner`. Sample gallery with real photos — later.
+Two tabs: **Single image** (verdict + edge overlay) and **Dataset (ZIP)** (batch table, click a row for per-frame metrics and preview). Default preset is `dataset_cleaner`.
+
+### Agent tool calling
+
+Agents should use JSON endpoints (no multipart). Fetch tool definitions once:
+
+```bash
+curl http://127.0.0.1:8000/v1/schema/tools
+```
+
+Example — check a ZIP dataset as base64 with automatic preset from use case:
+
+```python
+import base64
+import httpx
+
+archive_b64 = base64.b64encode(open("dataset.zip", "rb").read()).decode()
+r = httpx.post(
+    "http://127.0.0.1:8000/v1/batch/archive/b64",
+    json={"archive_base64": archive_b64, "use_case": "ml_dataset"},
+)
+print(r.json()["failed_count"], r.json()["items"][0]["human_summary"])
+```
+
+`use_case` maps to presets: `ml_dataset` → `dataset_cleaner`, `patient_photo` → `telemedicine`, `general` → `default`. Or pass `preset` directly.
 
 ## Presets
 

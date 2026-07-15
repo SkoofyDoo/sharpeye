@@ -7,41 +7,23 @@ from typing import Annotated
 
 import typer
 
+from sharpeye.exceptions import ArchiveError, PresetNotFoundError, SharpEyeError
+from sharpeye.ingest import collect_images
 from sharpeye.pipeline import Pipeline
 
 app = typer.Typer(
-    name = "sharpeye",
-    help = "SharpEye image quality control CLI",
-    no_args_is_help = True,
+    name="sharpeye",
+    help="SharpEye image quality control CLI",
+    no_args_is_help=True,
 )
-
-_IMAGE_EXTS = {
-    ".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tif", ".tiff",
-}
-
-
-def _collect_images(dataset: Path) -> list[Path]:
-    if not dataset.exists():
-        raise typer.BadParameter(f"Dataset path not found: {dataset}")
-    if dataset.is_file():
-        if dataset.suffix.lower() not in _IMAGE_EXTS:
-            raise typer.BadParameter(f"Not an image file: {dataset}")
-        return [dataset]
-    files = sorted(
-        p for p in dataset.rglob("*")
-        if p.is_file() and p.suffix.lower() in _IMAGE_EXTS
-    )
-    if not files:
-        raise typer.BadParameter(f"No images found under: {dataset}")
-    return files
 
 
 def _write_csv(rows: list[dict], output: Path) -> None:
     if not rows:
         return
     fieldnames = list(rows[0].keys())
-    with output.open("w", newline = "", encoding = "utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames = fieldnames)
+    with output.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(rows)
 
@@ -54,30 +36,42 @@ def version() -> None:
 
 @app.command("clean")
 def clean(
-    dataset: Annotated[str, typer.Argument(help = "Folder or single image path")],
+    dataset: Annotated[
+        str,
+        typer.Argument(help="Folder, .zip archive, or single image"),
+    ],
     preset: Annotated[str, typer.Option("--preset", "-p")] = "dataset_cleaner",
-    report: Annotated[str, typer.Option("--report", "-r", help = "csv or json")] = "csv",
+    report: Annotated[
+        str, typer.Option("--report", "-r", help="csv or json")
+    ] = "csv",
     output: Annotated[
-        str | None, typer.Option("--output", "-o", help = "Report file path"),
+        str | None, typer.Option("--output", "-o", help="Report file path")
     ] = None,
 ) -> None:
     """Scan dataset, run batch QC, write report."""
-    paths = _collect_images(Path(dataset))
-    pipe = Pipeline.from_preset(preset)
-    batch = pipe.evaluate_batch(paths)
+    try:
+        with collect_images(Path(dataset)) as paths:
+            pipe = Pipeline.from_preset(preset)
+            batch = pipe.evaluate_batch(paths)
 
-    rows: list[dict] = []
-    for path, frame in zip(paths, batch.frames, strict = True):
-        row = {
-            "path": str(path),
-            "passed": frame.passed,
-            "label": frame.label,
-            "human_summary": frame.human_summary,
-            "composite_score": frame.composite_score,
-        }
-        for k, v in frame.metrics.items():
-            row[f"metric_{k}"] = round(v, 4)
-        rows.append(row)
+            rows: list[dict] = []
+            for path, frame in zip(paths, batch.frames, strict=True):
+                row = {
+                    "path": str(path),
+                    "passed": frame.passed,
+                    "label": frame.label,
+                    "human_summary": frame.human_summary,
+                    "composite_score": frame.composite_score,
+                }
+                for k, v in frame.metrics.items():
+                    row[f"metric_{k}"] = round(v, 4)
+                rows.append(row)
+    except ArchiveError as e:
+        raise typer.BadParameter(str(e)) from e
+    except PresetNotFoundError as e:
+        raise typer.BadParameter(str(e)) from e
+    except SharpEyeError as e:
+        raise typer.BadParameter(str(e)) from e
 
     out_path = Path(output) if output is not None else Path(
         f"sharpeye_report.{'json' if report == 'json' else 'csv'}"
@@ -91,7 +85,7 @@ def clean(
             "failed_count": batch.failed_count,
             "rows": rows,
         }
-        out_path.write_text(json.dumps(payload, indent = 2), encoding = "utf-8")
+        out_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     elif report == "csv":
         _write_csv(rows, out_path)
     else:
